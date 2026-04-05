@@ -1057,9 +1057,103 @@ input, textarea, select {
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-bottom: constant(safe-area-inset-bottom, 0px);
 }
+
+/* ══ LOADER ══════════════════════════════════════════════ */
+#tc-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #060608;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#tc-loader.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.tc-loader-letters {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.tc-loader-word {
+  display: flex;
+  gap: 1px;
+}
+.tc-loader-space {
+  width: 14px;
+}
+.tc-loader-letter {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(22px, 5vw, 36px);
+  font-weight: 900;
+  color: white;
+  letter-spacing: 0.05em;
+  animation: tcLetterBounce 1.4s ease infinite;
+  display: inline-block;
+}
+@keyframes tcLetterBounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.2; }
+  40% { transform: translateY(-12px); opacity: 1; }
+}
+.tc-loader-bar {
+  width: 120px;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 1px;
+  overflow: hidden;
+  position: relative;
+}
+.tc-loader-bar-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, white, transparent);
+  animation: tcBarSlide 1.4s ease-in-out infinite;
+}
+@keyframes tcBarSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.tc-loader-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-top: -20px;
+}
 </style>
 </head>
 <body>
+
+<!-- LOADER -->
+<div id="tc-loader">
+  <div class="tc-loader-letters">
+    <div class="tc-loader-word">
+      <span class="tc-loader-letter" style="animation-delay:0s">T</span>
+      <span class="tc-loader-letter" style="animation-delay:0.1s">R</span>
+      <span class="tc-loader-letter" style="animation-delay:0.2s">A</span>
+      <span class="tc-loader-letter" style="animation-delay:0.3s">D</span>
+      <span class="tc-loader-letter" style="animation-delay:0.4s">E</span>
+    </div>
+    <div class="tc-loader-space"></div>
+    <div class="tc-loader-word">
+      <span class="tc-loader-letter" style="animation-delay:0.5s">C</span>
+      <span class="tc-loader-letter" style="animation-delay:0.6s">O</span>
+      <span class="tc-loader-letter" style="animation-delay:0.7s">M</span>
+      <span class="tc-loader-letter" style="animation-delay:0.8s">E</span>
+      <span class="tc-loader-letter" style="animation-delay:0.9s">T</span>
+    </div>
+  </div>
+  <div class="tc-loader-bar"><div class="tc-loader-bar-fill"></div></div>
+  <div class="tc-loader-sub">Loading your journal...</div>
+</div>
+
 <div class="ripple-root" id="rippleRoot"></div>
 <div class="shell">
 
@@ -2608,11 +2702,23 @@ async function loadFromCloud() {
 
 setInterval(syncToCloud, 30000)
 
+/* LOADER DISMISS */
+function dismissLoader(){
+  const loader = document.getElementById('tc-loader');
+  if(loader) loader.classList.add('hide');
+  setTimeout(()=>{ if(loader) loader.style.display='none'; }, 650);
+}
+
 /* BOOT */
 load();loadTheme();loadAcct();loadGlow();loadCompact();loadSidebarPnl();loadAccent();loadAccentHex();notesLoad();applyBrand();loadSidebarState();renderSidebar();renderHome();
 if(S.activeId&&S.days.find(d=>d.id===S.activeId))renderSidebar();
 else if(S.days.length>0){S.activeId=S.days[0].id;renderSidebar();}
-window.addEventListener('DOMContentLoaded',()=>{load();loadTheme();loadAcct();loadGlow();loadCompact();loadSidebarPnl();loadAccent();loadAccentHex();notesLoad();applyBrand();loadSidebarState();renderSidebar();renderHome();if(S.activeId)selectDay(S.activeId);applyRulesState();loadFromCloud();});
+window.addEventListener('DOMContentLoaded',()=>{load();loadTheme();loadAcct();loadGlow();loadCompact();loadSidebarPnl();loadAccent();loadAccentHex();notesLoad();applyBrand();loadSidebarState();renderSidebar();renderHome();if(S.activeId)selectDay(S.activeId);applyRulesState();
+  // Load from cloud then dismiss loader after minimum 2s
+  const minWait = new Promise(r => setTimeout(r, 2000));
+  const cloudLoad = loadFromCloud();
+  Promise.all([minWait, cloudLoad]).then(dismissLoader).catch(dismissLoader);
+});
 </script>
 </body>
 </html>
