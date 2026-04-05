@@ -1648,7 +1648,7 @@ const BRAND={name:'TradeComet',sub:'Trading Journal',initials:'TC',logo:''}; // 
 /* ══════════════════════════════════════
    PERSIST
 ══════════════════════════════════════ */
-function save(){saveActiveDay();try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}try{captureRulesState();localStorage.setItem(RULES_STORE,JSON.stringify(RS));}catch(e){}flashSaved();syncToCloud();}
+function save(){saveActiveDay();try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}try{captureRulesState();localStorage.setItem(RULES_STORE,JSON.stringify(RS));}catch(e){}try{if(_userId)localStorage.setItem('tc_last_save_'+_userId,Date.now().toString());}catch(e){}flashSaved();syncToCloud();}
 function load(){try{const d=localStorage.getItem(STORE);if(d)S=JSON.parse(d);}catch(e){}try{const d=localStorage.getItem(RULES_STORE);if(d)RS=JSON.parse(d);}catch(e){}try{const d=localStorage.getItem(ACCT_STORE);if(d)ACCT={...ACCT,...JSON.parse(d)};}catch(e){}try{const d=localStorage.getItem(BRAND_STORE);if(d){const b=JSON.parse(d);BRAND.logo=b.logo||'';}}catch(e){}}
 function saveAcct(){ACCT.name=v('acctName');ACCT.size=v('acctSize');ACCT.type=v('acctType');ACCT.market=v('acctMarket');ACCT.risk=v('acctRisk');ACCT.maxLoss=v('acctMaxLoss');try{localStorage.setItem(ACCT_STORE,JSON.stringify(ACCT));}catch(e){}updateTopbarChip();renderAcctPerf();flashSaved();}
 function v(id){const el=document.getElementById(id);return el?el.value:'';}
@@ -2124,6 +2124,11 @@ function clearAllData(){
     try{
       localStorage.removeItem(STORE); localStorage.removeItem(RULES_STORE);
       localStorage.removeItem(ACCT_STORE);
+      if(_userId){
+        localStorage.setItem('tc_last_save_'+_userId, Date.now().toString());
+        supaFetch('/rest/v1/trading_days?user_id=eq.'+_userId,'DELETE').catch(()=>{});
+        supaFetch('/rest/v1/notes?user_id=eq.'+_userId,'DELETE').catch(()=>{});
+      }
     }catch(e){}
     renderSidebar(); renderHome();
     document.getElementById('jDay').style.display='none';
@@ -2169,7 +2174,7 @@ function confirmNewDay(){const date=document.getElementById('modalDate').value;i
    SIDEBAR
 ══════════════════════════════════════ */
 function renderSidebar(){const el=document.getElementById('sessionList');el.innerHTML='';S.days.forEach(day=>{const pnl=dayPnl(day),trades=tradedCount(day);const div=document.createElement('div');div.className='session-item'+(day.id===S.activeId?' on':'')+(pnl>0?' profit':pnl<0?' loss':'');div.innerHTML=`<div class="si-row1"><div class="si-date">${fmtShort(day.date)}</div>${_sidebarPnlOn?`<div class="si-pnl ${pnl>0?'pos':pnl<0?'neg':'zero'}">${pnl!==0?fmt$(pnl):'—'}</div>`:''}</div><div class="si-meta">${trades} trade${trades!==1?'s':''}</div><button class="si-del" onclick="deleteDay(event,'${day.id}')">✕</button>`;div.onclick=e=>{if(!e.target.classList.contains('si-del'))selectDay(day.id);};el.appendChild(div);});}
-function deleteDay(e,id){e.stopPropagation();confirmDelete('Delete Session?','This session and all its data will be permanently removed.',()=>{S.days=S.days.filter(d=>d.id!==id);if(S.activeId===id){S.activeId=null;document.getElementById('jDay').style.display='none';document.getElementById('jNoDay').style.display='flex';}renderSidebar();save();});}
+function deleteDay(e,id){e.stopPropagation();confirmDelete('Delete Session?','This session and all its data will be permanently removed.',()=>{S.days=S.days.filter(d=>d.id!==id);if(S.activeId===id){S.activeId=null;document.getElementById('jDay').style.display='none';document.getElementById('jNoDay').style.display='flex';}renderSidebar();save();if(_userId)supaFetch('/rest/v1/trading_days?id=eq.'+id+'&user_id=eq.'+_userId,'DELETE').catch(()=>{});});}
 
 /* ══════════════════════════════════════
    SELECT DAY
@@ -2480,6 +2485,9 @@ async function supaFetch(path, method='GET', body=null) {
   if (method === 'POST') {
     headers['Prefer'] = 'resolution=merge-duplicates'
   }
+  if (method === 'DELETE') {
+    headers['Prefer'] = 'return=minimal'
+  }
   const opts = { method, headers }
   if (body) opts.body = JSON.stringify(body)
   const res = await fetch(SUPA_URL + path, opts)
@@ -2490,6 +2498,17 @@ async function supaFetch(path, method='GET', body=null) {
 async function syncToCloud() {
   if (!_userId) return
   try {
+    // Get all cloud day IDs and delete any that no longer exist locally
+    const cloudRows = await supaFetch('/rest/v1/trading_days?user_id=eq.' + _userId + '&select=id')
+    if (cloudRows && cloudRows.length > 0) {
+      const localIds = new Set((S.days || []).map(d => d.id))
+      for (const row of cloudRows) {
+        if (!localIds.has(row.id)) {
+          await supaFetch('/rest/v1/trading_days?id=eq.' + row.id + '&user_id=eq.' + _userId, 'DELETE')
+        }
+      }
+    }
+    // Now upsert all local days
     for (const day of (S.days || [])) {
       await supaFetch('/rest/v1/trading_days', 'POST', {
         id: day.id,
@@ -2544,15 +2563,26 @@ async function syncToCloud() {
 async function loadFromCloud() {
   if (!_userId) return
   try {
-    const days = await supaFetch('/rest/v1/trading_days?user_id=eq.' + _userId + '&order=date.desc')
+    // Use a local timestamp to know when user last deliberately changed data
+    // If cloud data was updated BEFORE our last local save, ignore it
+    const lastLocalSave = parseInt(localStorage.getItem('tc_last_save_' + _userId) || '0')
+
+    const days = await supaFetch('/rest/v1/trading_days?user_id=eq.' + _userId + '&order=updated_at.desc')
     if (days && days.length > 0) {
-      const cloudDays = days.map(d => d.data)
-      if (cloudDays.length >= (S.days || []).length) {
+      const cloudDays = days.map(d => d.data).filter(Boolean)
+      // Only restore from cloud if we have NO local data at all
+      // This means fresh login on a new device
+      if ((S.days || []).length === 0 && cloudDays.length > 0 && lastLocalSave === 0) {
         S.days = cloudDays
         if (S.days.length > 0) S.activeId = S.days[0].id
+        localStorage.setItem('tc_last_save_' + _userId, Date.now().toString())
         save()
+        renderSidebar()
+        renderHome()
+        if (S.activeId) selectDay(S.activeId)
       }
     }
+
     const notes = await supaFetch('/rest/v1/notes?user_id=eq.' + _userId + '&order=updated_at.desc')
     if (notes && notes.length > 0) {
       const cloudNotes = notes.map(n => ({
@@ -2562,11 +2592,12 @@ async function loadFromCloud() {
         createdAt: new Date(n.created_at).getTime(),
         updatedAt: new Date(n.updated_at).getTime()
       }))
-      if (cloudNotes.length >= _notes.length) {
+      if (_notes.length === 0 && cloudNotes.length > 0 && lastLocalSave === 0) {
         _notes = cloudNotes
         notesSave()
       }
     }
+
     const settings = await supaFetch('/rest/v1/user_settings?user_id=eq.' + _userId)
     if (settings && settings.length > 0) {
       const s = settings[0]
