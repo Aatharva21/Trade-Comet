@@ -135,13 +135,22 @@ vPosition=lp;gl_Position=projectionMatrix*modelViewMatrix*vec4(lp,1.);}`,
     )
     scene.add(mesh)
     renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setClearColor(0x000000, 0)
     camera.position.set(0, 16, 125)
     camera.lookAt(new THREE.Vector3(0, 28, 0))
     let animId: number
-    const loop = () => { uniforms.time.value += clock.getDelta() * 0.5; renderer.render(scene, camera); animId = requestAnimationFrame(loop) }
+    const loop = () => {
+      uniforms.time.value += clock.getDelta() * 0.5
+      renderer.render(scene, camera)
+      animId = requestAnimationFrame(loop)
+    }
     loop()
-    const onResize = () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight) }
+    const onResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(window.innerWidth, window.innerHeight)
+    }
     window.addEventListener('resize', onResize)
     return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', onResize); renderer.dispose() }
   }, [])
@@ -204,12 +213,12 @@ const RatingInteraction = ({ user, onSubmit }: { user: any, onSubmit: (r: number
 
 /* ── FEATURES ──────────────────────────────────────────── */
 const features = [
-  { num: '01', title: 'TRADE LOGGING', desc: 'Log every trade with entry, exit, P&L, screenshots and notes in seconds.', icon: '📋' },
-  { num: '02', title: 'DEEP ANALYTICS', desc: 'Win rate, profit factor, expectancy, drawdown — every metric you need.', icon: '📊' },
-  { num: '03', title: 'PATTERN RECOGNITION', desc: 'Discover which setups and sessions make you the most money.', icon: '🔍' },
-  { num: '04', title: 'RISK MANAGEMENT', desc: 'Track R-multiples and risk per trade automatically.', icon: '🛡️' },
-  { num: '05', title: 'TRADE CALENDAR', desc: 'Spot your best and worst trading days visually over time.', icon: '📅' },
-  { num: '06', title: 'YOUR PLAYBOOK', desc: 'Build your playbook with custom setups, rules and mindset notes.', icon: '📖' },
+  { num: '01', title: 'TRADE LOGGING', desc: 'Log every trade with entry, exit, P&L, screenshots and notes in seconds.' },
+  { num: '02', title: 'DEEP ANALYTICS', desc: 'Win rate, profit factor, expectancy, drawdown — every metric you need.' },
+  { num: '03', title: 'PATTERN RECOGNITION', desc: 'Discover which setups and sessions make you the most money.' },
+  { num: '04', title: 'RISK MANAGEMENT', desc: 'Track R-multiples and risk per trade automatically.' },
+  { num: '05', title: 'TRADE CALENDAR', desc: 'Spot your best and worst trading days visually over time.' },
+  { num: '06', title: 'YOUR PLAYBOOK', desc: 'Build your playbook with custom setups, rules and mindset notes.' },
 ]
 
 /* ── MAIN ──────────────────────────────────────────────── */
@@ -301,7 +310,26 @@ export default function Home() {
         .hero-btn{animation:fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.55s both;}
         .nav-a:hover{color:white!important;border-color:rgba(255,255,255,0.35)!important;}
         .launch-btn:hover{background:rgba(255,255,255,0.1)!important;border-color:rgba(255,255,255,0.5)!important;box-shadow:0 0 32px rgba(255,255,255,0.08)!important;}
-        .feat-card:hover{background:rgba(255,255,255,0.04)!important;border-color:rgba(255,255,255,0.12)!important;}
+        .feat-card{
+          background:rgba(255,255,255,0.045)!important;
+          border:1px solid rgba(255,255,255,0.1)!important;
+          border-radius:16px!important;
+          backdrop-filter:blur(18px)!important;
+          -webkit-backdrop-filter:blur(18px)!important;
+          box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 4px 32px rgba(0,0,0,0.35)!important;
+          transition:transform 0.3s cubic-bezier(.34,1.56,.64,1),background 0.3s,box-shadow 0.3s,border-color 0.3s!important;
+        }
+        .feat-card::before{
+          content:'';position:absolute;inset:0;border-radius:16px;
+          background:radial-gradient(ellipse at 60% 0%,rgba(255,255,255,0.07) 0%,transparent 65%);
+          pointer-events:none;
+        }
+        .feat-card:hover{
+          transform:scale(1.04) translateY(-4px)!important;
+          background:rgba(255,255,255,0.08)!important;
+          border-color:rgba(255,255,255,0.22)!important;
+          box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),0 12px 48px rgba(0,0,0,0.5),0 0 40px rgba(255,255,255,0.04)!important;
+        }
         @media(max-width:768px){
           .spline-wrap{display:none!important;}
           .hero-inner{padding:0 28px!important;}
@@ -422,7 +450,7 @@ export default function Home() {
       {/* ══ PAGE 2: FEATURES + GLSL HILLS ══ */}
       <section id="features" style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', background: '#060608' }}>
         <GLSLHills />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,#060608 0%,rgba(6,6,8,0.55) 30%,rgba(6,6,8,0.55) 70%,#060608 100%)', zIndex: 1 }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,#060608 0%,rgba(6,6,8,0.35) 25%,rgba(6,6,8,0.35) 75%,#060608 100%)', zIndex: 1, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', zIndex: 2, padding: isMobile ? '80px 20px' : '100px 80px' }}>
           <div style={{ marginBottom: isMobile ? 48 : 72, textAlign: 'center' }}>
             <div style={{ fontFamily: 'Orbitron, monospace', fontSize: 9, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.4em', textTransform: 'uppercase', marginBottom: 16 }}>What's inside</div>
@@ -431,11 +459,10 @@ export default function Home() {
               <span style={{ WebkitTextStroke: '1px rgba(255,255,255,0.25)', WebkitTextFillColor: 'transparent' }}>THE EDGE.</span>
             </div>
           </div>
-          <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.06)' }}>
+          <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, maxWidth: 1100, margin: '0 auto' }}>
             {features.map(f => (
-              <div key={f.num} className="feat-card" style={{ background: '#060608', padding: isMobile ? '24px 18px' : '38px 32px', position: 'relative', overflow: 'hidden', transition: 'all 0.3s', border: '1px solid transparent' }}>
-                <div style={{ position: 'absolute', top: -8, right: 14, fontFamily: 'Orbitron, monospace', fontSize: isMobile ? 52 : 80, fontWeight: 900, color: 'rgba(255,255,255,0.025)', lineHeight: 1, userSelect: 'none' }}>{f.num}</div>
-                <div style={{ fontSize: isMobile ? 22 : 26, marginBottom: 14 }}>{f.icon}</div>
+              <div key={f.num} className="feat-card" style={{ padding: isMobile ? '24px 18px' : '38px 32px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: -10, right: 14, fontFamily: 'Orbitron, monospace', fontSize: isMobile ? 52 : 80, fontWeight: 900, color: 'rgba(255,255,255,0.025)', lineHeight: 1, userSelect: 'none' }}>{f.num}</div>
                 <div style={{ fontFamily: 'Orbitron, monospace', fontSize: 8, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.3em', marginBottom: 12 }}>{f.num} / 06</div>
                 <div style={{ fontFamily: 'Orbitron, monospace', fontSize: isMobile ? 11 : 13, fontWeight: 900, lineHeight: 1.3, color: 'white', marginBottom: 12, letterSpacing: '0.04em' }}>{f.title}</div>
                 <div style={{ width: 18, height: 1, background: 'rgba(255,255,255,0.12)', marginBottom: 12 }} />
