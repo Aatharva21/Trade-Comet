@@ -121,9 +121,22 @@ export default function Home() {
 
   useEffect(() => {
     const audio = new Audio('/tradecometSoundTrack.mp3')
-    audio.loop = true; audio.volume = 0.4; audio.muted = false
+    audio.loop = true
+    audio.volume = 0.4
+    audio.muted = false
     audioRef.current = audio
-    audio.play().catch(() => {})
+
+    const tryPlay = () => {
+      audio.play().catch(() => {})
+    }
+
+    tryPlay()
+
+    document.addEventListener('click', tryPlay, { once: true })
+    document.addEventListener('touchstart', tryPlay, { once: true })
+    document.addEventListener('keydown', tryPlay, { once: true })
+    document.addEventListener('mousemove', tryPlay, { once: true })
+
     return () => { audio.pause() }
   }, [])
 
