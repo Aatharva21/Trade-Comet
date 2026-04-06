@@ -43,6 +43,7 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
+@media(max-width:768px){html,body{overflow:auto;height:auto;min-height:100%;min-height:-webkit-fill-available;}}
 body{font-family:'Orbitron',monospace;font-size:12px;line-height:1.5;background:var(--bg);color:var(--text-1);-webkit-font-smoothing:antialiased;}
 ::-webkit-scrollbar{width:2px;height:2px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:2px}
 
@@ -54,6 +55,7 @@ body{font-family:'Orbitron',monospace;font-size:12px;line-height:1.5;background:
 
 /* LAYOUT */
 .shell{display:grid;grid-template-rows:52px 1fr;grid-template-columns:240px 1fr;height:100vh}
+@media(max-width:768px){.shell{height:100%;min-height:100vh;min-height:-webkit-fill-available;}}
 
 /* TOPBAR */
 .topbar{grid-column:1/-1;display:flex;align-items:center;padding:0 18px;background:var(--surface);border-bottom:1px solid var(--border);position:relative;z-index:200;}
@@ -1007,6 +1009,32 @@ body{font-family:'Orbitron',monospace;font-size:12px;line-height:1.5;background:
 
   /* Section padding */
   .sec-h{font-size:14px!important;}
+
+  /* Day stats - 5 cols too wide on mobile */
+  .day-stats{grid-template-columns:repeat(3,1fr)!important;gap:6px!important;}
+
+  /* Home stats - 5 tiles to 2 cols */
+  .home-stats{grid-template-columns:repeat(2,1fr)!important;}
+
+  /* Trade card fields stacked */
+  .tc-fields{grid-template-columns:1fr!important;}
+
+  /* Field rows wrap on small screens */
+  .field-row{flex-wrap:wrap!important;}
+  .fl{min-width:60px!important;}
+
+  /* Stats grid fixes */
+  .stats-grid-4{grid-template-columns:repeat(2,1fr)!important;}
+
+  /* Image grid smaller */
+  .img-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))!important;}
+
+  /* Topbar logo text size */
+  .logo-name{font-size:14px!important;}
+
+  /* Prevent horizontal scroll */
+  .main,.shell{overflow-x:hidden!important;}
+  .page{overflow-x:hidden!important;}
 }
 
 @media (max-width:480px){
@@ -1015,6 +1043,13 @@ body{font-family:'Orbitron',monospace;font-size:12px;line-height:1.5;background:
   .acct-grid{grid-template-columns:1fr!important;}
   .cal-month-stats{grid-template-columns:repeat(2,1fr)!important;}
   .logo-name{font-size:11px!important;}
+  .day-stats{grid-template-columns:repeat(2,1fr)!important;}
+  .modal{padding:18px 16px!important;}
+  .settings-drawer{width:100%!important;}
+  .hero{padding:18px 14px 16px!important;}
+  .tile-val{font-size:22px!important;}
+  .ds-val{font-size:18px!important;}
+  .hero-amount{font-size:36px!important;}
 }
 
 /* ══ IOS SAFARI FIXES ════════════════════════════════════ */
